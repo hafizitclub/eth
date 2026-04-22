@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETH Trader - Live Trading Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d4aa;
+            --primary-dark: #00b894;
+            --bg-dark: #0a0e27;
+            --bg-card: #141b34;
+            --bg-input: #1a2342;
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --text-muted: #5a6581;
+            --border: #1f2940;
+            --success: #00d4aa;
+            --danger: #ff4757;
+            --warning: #ffa502;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #141b34 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+            background: var(--bg-dark);
+            box-shadow: 0 0 50px rgba(0, 212, 170, 0.1);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, #00fff7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .balance-pill {
+            background: var(--bg-input);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--primary);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+        }
+
+        /* Price Display */
+        .price-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary) 0%, #00fff7 100%);
+        }
+
+        .asset-name {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--success); }
+            50% { opacity: 0.5; box-shadow: 0 0 4px var(--success); }
+        }
+
+        .price-main {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .price-change {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .change-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .change-badge.up {
+            background: rgba(0, 212, 170, 0.1);
+            color: var(--success);
+        }
+
+        .change-badge.down {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+        }
+
+        /* Portfolio */
+        .portfolio {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .portfolio-header {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .portfolio-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat {
+            background: var(--bg-input);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Trading Buttons */
+        .trading-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .btn-buy {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--bg-dark);
+        }
+
+        .btn-buy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-sell {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-sell:hover {
+            background: var(--bg-card);
+            border-color: var(--text-secondary);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.95);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid var(--border);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+
+        .input-suffix {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .quick-amounts {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .quick-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .trade-summary {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .summary-row:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-label {
+            color: var(--text-secondary);
+        }
+
+        .summary-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm.buy {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--bg-dark);
+        }
+
+        .btn-confirm.sell {
+            background: linear-gradient(135deg, var(--danger) 0%, #e84118 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Transactions */
+        .transactions {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .transactions-header {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+        }
+
+        .transaction {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .transaction:hover {
+            border-color: var(--text-muted);
+        }
+
+        .transaction-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .transaction-type {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .transaction-type.buy {
+            color: var(--success);
+        }
+
+        .transaction-type.sell {
+            color: var(--danger);
+        }
+
+        .transaction-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .transaction-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Content Sections */
+        .content {
+            padding: 20px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            transition: transform 0.3s;
+            min-width: 300px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            border-color: var(--danger);
+        }
+
+        /* Loading */
+        .loading-dot {
+            display: inline-block;
+            animation: loading 1.4s infinite;
+        }
+
+        @keyframes loading {
+            0%, 60%, 100% { opacity: 1; }
+            30% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">ETH TRADER</div>
+                <div class="balance-pill" id="sgdBalance">SGD $10,000.00</div>
+            </div>
+
+            <!-- Price Card -->
+            <div class="price-card">
+                <div class="asset-name">
+                    <span class="live-indicator"></span>
+                    Ethereum (ETH/SGD)
+                </div>
+                <div class="price-main" id="ethPrice">$<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div>
+                <div class="price-change">
+                    <div class="change-badge up" id="priceChange">
+                        <span id="changeSymbol">▲</span>
+                        <span id="changePercent">0.00%</span>
+                    </div>
+                    <span class="text-muted" style="font-size: 13px;">24h Change</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Portfolio -->
+            <div class="portfolio">
+                <div class="portfolio-header">Your Portfolio</div>
+                <div class="portfolio-stats">
+                    <div class="stat">
+                        <div class="stat-label">ETH Holdings</div>
+                        <div class="stat-value" id="ethHoldings">0.0000</div>
+                        <div class="stat-sub" id="ethValue">SGD $0.00</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Total Value</div>
+                        <div class="stat-value" id="totalValue">$10,000</div>
+                        <div class="stat-sub" id="pnl">P&L: $0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Actions -->
+            <div class="trading-actions">
+                <button class="btn btn-buy" onclick="openTradeModal('buy')">Buy ETH</button>
+                <button class="btn btn-sell" onclick="openTradeModal('sell')">Sell ETH</button>
+            </div>
+
+            <!-- Transactions -->
+            <div class="transactions">
+                <div class="transactions-header">
+                    Recent Transactions
+                    <button class="clear-btn" onclick="clearTransactions()">Clear All</button>
+                </div>
+                <div id="transactionsList">
+                    <div class="empty-state">No transactions yet. Start trading!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade Modal -->
+    <div class="modal" id="tradeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Buy ETH</div>
+                <button class="modal-close" onclick="closeTradeModal()">×</button>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Amount (SGD)</label>
+                <div class="input-wrapper">
+                    <input type="number" class="input" id="tradeAmount" placeholder="0.00" step="0.01" min="0">
+                    <span class="input-suffix">SGD</span>
+                </div>
+                <div class="quick-amounts">
+                    <button class="quick-btn" onclick="setQuickAmount(100)">$100</button>
+                    <button class="quick-btn" onclick="setQuickAmount(500)">$500</button>
+                    <button class="quick-btn" onclick="setQuickAmount(1000)">$1000</button>
+                    <button class="quick-btn" onclick="setQuickAmount('max')">MAX</button>
+                </div>
+            </div>
+
+            <div class="trade-summary" id="tradeSummary">
+                <div class="summary-row">
+                    <span class="summary-label">Current Price</span>
+                    <span class="summary-value" id="summaryPrice">$0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">You'll Receive</span>
+                    <span class="summary-value" id="summaryReceive">0.0000 ETH</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Available Balance</span>
+                    <span class="summary-value" id="summaryBalance">$0.00</span>
+                </div>
+            </div>
+
+            <button class="btn-confirm buy" id="confirmBtn" onclick="executeTrade()">Confirm Buy</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // State
+        let state = {
+            ethPrice: 0,
+            priceChange24h: 0,
+            sgdBalance: 10000,
+            ethHoldings: 0,
+            transactions: [],
+            currentTradeType: 'buy',
+            initialBalance: 10000
+        };
+
+        // Load saved state
+        function loadState() {
+            const saved = localStorage.getItem('ethTraderState');
+            if (saved) {
+                const savedState = JSON.parse(saved);
+                state = { ...state, ...savedState };
+                updateUI();
+            }
+        }
+
+        // Save state
+        function saveState() {
+            localStorage.setItem('ethTraderState', JSON.stringify(state));
+        }
+
+        // Fetch ETH price with CORS proxy
+        async function fetchETHPrice() {
+            const corsProxy = 'https://api.allorigins.win/raw?url=';
+            
+            // Try Binance API (most reliable, no rate limits)
+            try {
+                const [ethResponse, usdSgdResponse] = await Promise.all([
+                    fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT'),
+                    fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDSGD')
+                ]);
+
+                if (ethResponse.ok && usdSgdResponse.ok) {
+                    const ethData = await ethResponse.json();
+                    const usdSgdData = await usdSgdResponse.json();
+
+                    const ethUsd = parseFloat(ethData.lastPrice);
+                    const usdSgd = parseFloat(usdSgdData.price);
+                    
+                    state.ethPrice = ethUsd * usdSgd;
+                    state.priceChange24h = parseFloat(ethData.priceChangePercent);
+                    
+                    updatePriceDisplay();
+                    updatePortfolio();
+                    return;
+                }
+            } catch (error) {
+                console.log('Binance direct failed, trying with proxy...', error);
+            }
+
+            // Try CoinGecko with CORS proxy
+            try {
+                const url = encodeURIComponent('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=sgd&include_24hr_change=true');
+                const response = await fetch(corsProxy + url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.ethereum && data.ethereum.sgd) {
+                        state.ethPrice = data.ethereum.sgd;
+                        state.priceChange24h = data.ethereum.sgd_24h_change || 0;
+                        updatePriceDisplay();
+                        updatePortfolio();
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('CoinGecko with proxy failed...', error);
+            }
+
+            // Try Binance with CORS proxy as last resort
+            try {
+                const ethUrl = encodeURIComponent('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT');
+                const sgdUrl = encodeURIComponent('https://api.binance.com/api/v3/ticker/price?symbol=USDSGD');
+                
+                const [ethResponse, usdSgdResponse] = await Promise.all([
+                    fetch(corsProxy + ethUrl),
+                    fetch(corsProxy + sgdUrl)
+                ]);
+
+                if (ethResponse.ok && usdSgdResponse.ok) {
+                    const ethData = await ethResponse.json();
+                    const usdSgdData = await usdSgdResponse.json();
+
+                    const ethUsd = parseFloat(ethData.lastPrice);
+                    const usdSgd = parseFloat(usdSgdData.price);
+                    
+                    state.ethPrice = ethUsd * usdSgd;
+                    state.priceChange24h = parseFloat(ethData.priceChangePercent);
+                    
+                    updatePriceDisplay();
+                    updatePortfolio();
+                    return;
+                }
+            } catch (error) {
+                console.error('All methods failed:', error);
+            }
+
+            // If all fail, show error
+            showToast('Unable to fetch live prices', 'error');
+        }
+
+        // Update price display
+        function updatePriceDisplay() {
+            document.getElementById('ethPrice').textContent = `$${state.ethPrice.toFixed(2)}`;
+            
+            const changeBadge = document.getElementById('priceChange');
+            const changeSymbol = document.getElementById('changeSymbol');
+            const changePercent = document.getElementById('changePercent');
+            
+            const isPositive = state.priceChange24h >= 0;
+            changeBadge.className = `change-badge ${isPositive ? 'up' : 'down'}`;
+            changeSymbol.textContent = isPositive ? '▲' : '▼';
+            changePercent.textContent = `${Math.abs(state.priceChange24h).toFixed(2)}%`;
+        }
+
+        // Update portfolio
+        function updatePortfolio() {
+            const ethValue = state.ethHoldings * state.ethPrice;
+            const totalValue = state.sgdBalance + ethValue;
+            const pnl = totalValue - state.initialBalance;
+            
+            document.getElementById('sgdBalance').textContent = `SGD $${state.sgdBalance.toFixed(2)}`;
+            document.getElementById('ethHoldings').textContent = state.ethHoldings.toFixed(4);
+            document.getElementById('ethValue').textContent = `SGD $${ethValue.toFixed(2)}`;
+            document.getElementById('totalValue').textContent = `$${totalValue.toFixed(2)}`;
+            
+            const pnlEl = document.getElementById('pnl');
+            const pnlColor = pnl >= 0 ? 'var(--success)' : 'var(--danger)';
+            pnlEl.textContent = `P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+            pnlEl.style.color = pnlColor;
+        }
+
+        // Update UI
+        function updateUI() {
+            updatePriceDisplay();
+            updatePortfolio();
+            updateTransactionsList();
+        }
+
+        // Open trade modal
+        function openTradeModal(type) {
+            state.currentTradeType = type;
+            const modal = document.getElementById('tradeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const confirmBtn = document.getElementById('confirmBtn');
+            
+            modalTitle.textContent = type === 'buy' ? 'Buy ETH' : 'Sell ETH';
+            confirmBtn.className = `btn-confirm ${type}`;
+            confirmBtn.textContent = type === 'buy' ? 'Confirm Buy' : 'Confirm Sell';
+            
+            document.getElementById('tradeAmount').value = '';
+            updateTradeSummary();
+            
+            modal.classList.add('active');
+        }
+
+        // Close trade modal
+        function closeTradeModal() {
+            document.getElementById('tradeModal').classList.remove('active');
+        }
+
+        // Set quick amount
+        function setQuickAmount(amount) {
+            const input = document.getElementById('tradeAmount');
+            if (amount === 'max') {
+                if (state.currentTradeType === 'buy') {
+                    input.value = state.sgdBalance.toFixed(2);
+                } else {
+                    input.value = (state.ethHoldings * state.ethPrice).toFixed(2);
+                }
+            } else {
+                input.value = amount;
+            }
+            updateTradeSummary();
+        }
+
+        // Update trade summary
+        function updateTradeSummary() {
+            const amount = parseFloat(document.getElementById('tradeAmount').value) || 0;
+            const ethAmount = amount / state.ethPrice;
+            
+            document.getElementById('summaryPrice').textContent = `$${state.ethPrice.toFixed(2)}`;
+            document.getElementById('summaryReceive').textContent = `${ethAmount.toFixed(4)} ETH`;
+            
+            if (state.currentTradeType === 'buy') {
+                document.getElementById('summaryBalance').textContent = `$${state.sgdBalance.toFixed(2)}`;
+            } else {
+                document.getElementById('summaryBalance').textContent = `${state.ethHoldings.toFixed(4)} ETH`;
+            }
+        }
+
+        // Execute trade
+        function executeTrade() {
+            const amount = parseFloat(document.getElementById('tradeAmount').value);
+            
+            if (!amount || amount <= 0) {
+                showToast('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            if (state.currentTradeType === 'buy') {
+                if (amount > state.sgdBalance) {
+                    showToast('Insufficient SGD balance', 'error');
+                    return;
+                }
+                
+                const ethAmount = amount / state.ethPrice;
+                state.sgdBalance -= amount;
+                state.ethHoldings += ethAmount;
+                
+                state.transactions.unshift({
+                    type: 'buy',
+                    amount: ethAmount,
+                    price: state.ethPrice,
+                    total: amount,
+                    timestamp: Date.now()
+                });
+                
+                showToast(`Bought ${ethAmount.toFixed(4)} ETH for $${amount.toFixed(2)}`, 'success');
+            } else {
+                const ethAmount = amount / state.ethPrice;
+                
+                if (ethAmount > state.ethHoldings) {
+                    showToast('Insufficient ETH holdings', 'error');
+                    return;
+                }
+                
+                state.ethHoldings -= ethAmount;
+                state.sgdBalance += amount;
+                
+                state.transactions.unshift({
+                    type: 'sell',
+                    amount: ethAmount,
+                    price: state.ethPrice,
+                    total: amount,
+                    timestamp: Date.now()
+                });
+                
+                showToast(`Sold ${ethAmount.toFixed(4)} ETH for $${amount.toFixed(2)}`, 'success');
+            }
+            
+            saveState();
+            updateUI();
+            closeTradeModal();
+        }
+
+        // Update transactions list
+        function updateTransactionsList() {
+            const list = document.getElementById('transactionsList');
+            
+            if (state.transactions.length === 0) {
+                list.innerHTML = '<div class="empty-state">No transactions yet. Start trading!</div>';
+                return;
+            }
+            
+            list.innerHTML = state.transactions.map(tx => {
+                const date = new Date(tx.timestamp);
+                const timeStr = date.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString('en-SG', { month: 'short', day: 'numeric' });
+                
+                return `
+                    <div class="transaction">
+                        <div class="transaction-top">
+                            <span class="transaction-type ${tx.type}">${tx.type === 'buy' ? 'BUY' : 'SELL'}</span>
+                            <span class="transaction-time">${timeStr} • ${dateStr}</span>
+                        </div>
+                        <div class="transaction-details">
+                            <span>${tx.amount.toFixed(4)} ETH @ $${tx.price.toFixed(2)}</span>
+                            <span>$${tx.total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Clear transactions
+        function clearTransactions() {
+            if (confirm('Clear all transaction history?')) {
+                state.transactions = [];
+                saveState();
+                updateTransactionsList();
+                showToast('Transaction history cleared', 'success');
+            }
+        }
+
+        // Show toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Listen to trade amount input
+        document.getElementById('tradeAmount').addEventListener('input', updateTradeSummary);
+
+        // Initialize
+        loadState();
+        fetchETHPrice();
+        
+        // Update price every 10 seconds
+        setInterval(fetchETHPrice, 10000);
+    </script>
+</body>
+</html>
